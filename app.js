@@ -27,7 +27,7 @@ const allowedCors = [
   'https://praktikum.tk',
   'http://praktikum.tk',
   'localhost:3000',
-  'http://domainname.students.nomoredomains.monster',
+  'http://bitfilms.ilshat.nomoredomains.monster',
 ];
 
 app.use((req, res, next) => {
