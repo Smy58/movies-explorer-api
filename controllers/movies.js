@@ -66,31 +66,18 @@ module.exports.createMovie = (req, res, next) => {
 
 module.exports.deleteMovie = (req, res, next) => {
   Movie.findById(req.params.movieId)
-    .then((user) => {
-      if (user === null) {
-        const e = new NotFoundError('Карточка с указанным _id не найдена.');
-        next(e);
-      } else if (`${user.owner}` !== req.user._id) {
-        const e = new ForbiddenError('Удаление чужой карточки.');
-        next(e);
-      } else {
-        Movie.findByIdAndDelete(req.params.movieId)
-          .then((movie) => {
-            res.send({ data: movie });
-          });
+    .orFail(new NotFoundError('Фильм с указанным _id не найдена.'))
+    .then((movie) => {
+      if (req.user._id.toString() === movie.owner.toString()) {
+        return movie.remove()
+          .then(() => res.status(200).send({ message: 'Фильм удалён' }));
       }
+      throw new ForbiddenError('Нельзя удалять чужой фильм.');
     })
     .catch((err) => {
-      // console.log(err.name);
-      if (err.name === 'CastError') {
-        const e = new BadRequestError('Переданы некорректные данные карточки.');
-        next(e);
+      if (err.kind === 'ObjectId') {
+        next(new BadRequestError('Невалидный id.'));
       }
-      if (err.name === 'Not Found') {
-        const e = new NotFoundError('Карточка с указанным _id не найдена.');
-        next(e);
-      }
-      const e = new ServerError('Ошибка по умолчанию.');
-      next(e);
+      next(err);
     });
 };

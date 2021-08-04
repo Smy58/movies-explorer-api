@@ -2,13 +2,19 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 
-const { NODE_ENV, JWT_SECRET } = process.env;
 require('dotenv').config();
+
+const { NODE_ENV, JWT_SECRET } = process.env;
 
 const NotFoundError = require('../errors/not-found-err'); // 404
 const BadRequestError = require('../errors/bad-request-err'); // 400
 const ServerError = require('../errors/server-err'); // 500
 const ConflictError = require('../errors/conflict-err'); // 409
+
+module.exports.getNothing = (req, res, next) => {
+  const e = new NotFoundError('Запрашиваемый ресурс не найден.');
+  next(e);
+};
 
 module.exports.createUser = (req, res, next) => {
   const {
@@ -22,7 +28,16 @@ module.exports.createUser = (req, res, next) => {
           .then((hash) => User.create({
             name, email, password: hash,
           })
-            .then((newUser) => res.send({ data: newUser })));
+            .then((newUser) => res.send({ data: { name: newUser.name, email: newUser.email } })))
+          .catch((err) => {
+            if (err.name === 'ValidationError') {
+              const e = new BadRequestError('Переданы некорректные данные при создании пользователя.');
+              next(e);
+            } else {
+              const e = new ServerError('Ошибка по умолчанию.');
+              next(e);
+            }
+          });
       } else {
         throw new ConflictError('Пользователь с таким email уже существует.');
       }
@@ -30,13 +45,10 @@ module.exports.createUser = (req, res, next) => {
     .catch((err) => {
       if (err.statusCode === 409) {
         next(err);
-      }
-      if (err.name === 'ValidationError') {
-        const e = new BadRequestError('Переданы некорректные данные при создании пользователя.');
+      } else {
+        const e = new ServerError('Ошибка по умолчанию.');
         next(e);
       }
-      const e = new ServerError('Ошибка по умолчанию.');
-      next(e);
     });
 };
 
@@ -60,27 +72,31 @@ module.exports.updateUser = (req, res, next) => {
             } else {
               res.send({ data: user });
             }
+          })
+          .catch((err) => {
+            if (err.name === 'ValidationError') {
+              const e = new BadRequestError('Переданы некорректные данные при обновлении профиля.');
+              next(e);
+            } else {
+              const e = new ServerError('Ошибка по умолчанию.');
+              next(e);
+            }
           });
       }
     })
     .catch((err) => {
       if (err.statusCode === 404) {
         next(err);
-      }
-      if (err.name === 'ValidationError') {
-        const e = new BadRequestError('Переданы некорректные данные при обновлении профиля.');
-        next(e);
-      }
-      if (err.name === 'Not Found') {
+      } else if (err.name === 'Not Found') {
         const e = new NotFoundError('Пользователь с указанным _id не найден.');
         next(e);
-      }
-      if (err.name === 'CastError') {
+      } else if (err.name === 'CastError') {
         const e = new BadRequestError('Переданы некорректные данные при обновлении профиля.');
         next(e);
+      } else {
+        const e = new ServerError('Ошибка по умолчанию.');
+        next(e);
       }
-      const e = new ServerError('Ошибка по умолчанию.');
-      next(e);
     });
 };
 

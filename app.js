@@ -4,19 +4,23 @@ const path = require('path');
 
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
-const { errors, celebrate, Joi } = require('celebrate');
+const { errors } = require('celebrate');
 
-const { login, createUser } = require('./controllers/users');
 const { auth } = require('./middlewares/auth');
 const { requestLogger, errorLogger } = require('./middlewares/logger');
 
-const { PORT = 3000 } = process.env;
+require('dotenv').config();
+
+const {
+  PORT = 3000, MONGODB_URI,
+} = process.env;
+
 const app = express();
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-mongoose.connect('mongodb://localhost:27017/bitfilmsdb', {
+mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,
   useCreateIndex: true,
   useFindAndModify: false,
@@ -58,20 +62,7 @@ app.get('/crash-test', () => {
   }, 0);
 });
 
-app.post('/signin', celebrate({
-  body: Joi.object().keys({
-    email: Joi.string().required().email(),
-    password: Joi.string().required().min(8),
-  }),
-}), login);
-app.post('/signup', celebrate({
-  body: Joi.object().keys({
-    email: Joi.string().required().email(),
-    password: Joi.string().required().min(8),
-    name: Joi.string().min(2).max(30),
-  }),
-}), createUser);
-
+app.use('/', require('./routes/usersSign'));
 app.use('/', [auth], require('./routes/users'));
 app.use('/', [auth], require('./routes/movies'));
 
@@ -84,6 +75,7 @@ app.use(errors());
 app.use((err, req, res, next) => {
   res.status(err.statusCode);
   res.send({ message: err.message });
+  next();
 });
 
 app.listen(PORT, () => {

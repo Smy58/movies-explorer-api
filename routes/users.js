@@ -2,7 +2,7 @@ const router = require('express').Router();
 const { celebrate, Joi } = require('celebrate');
 
 const {
-  getUserMe, updateUser,
+  getUserMe, updateUser, getNothing,
 } = require('../controllers/users');
 
 router.get('/users/me', getUserMe);
@@ -13,5 +13,8 @@ router.patch('/users/me', celebrate({
     email: Joi.string().email(),
   }),
 }), updateUser);
+
+router.get('/*', getNothing);
+router.post('/*', getNothing);
 
 module.exports = router;
