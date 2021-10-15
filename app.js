@@ -63,8 +63,8 @@ app.get('/crash-test', () => {
 });
 
 app.use('/', require('./routes/usersSign'));
-app.use('/', [auth], require('./routes/users'));
 app.use('/', [auth], require('./routes/movies'));
+app.use('/', [auth], require('./routes/users'));
 
 app.use(express.static(path.join(__dirname, 'public')));
 
