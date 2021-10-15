@@ -34,7 +34,7 @@ const movieSchema = new mongoose.Schema({
     required: true,
     validate: {
       validator(v) {
-        return /https?:\/\/([\w-]{1,32}\.[\w-]{1,32})[^\s]*/gm.test(v);
+        return /\/([\w-]{1,32}\.[\w-]{1,32})[^\s]*/gm.test(v);
       },
       message: 'Не правильная ссылка',
     },
@@ -54,7 +54,7 @@ const movieSchema = new mongoose.Schema({
     required: true,
     validate: {
       validator(v) {
-        return /https?:\/\/([\w-]{1,32}\.[\w-]{1,32})[^\s]*/gm.test(v);
+        return /\/([\w-]{1,32}\.[\w-]{1,32})[^\s]*/gm.test(v);
       },
       message: 'Не правильная ссылка',
     },
